@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#f6f3eb" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Spending Garden" />
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+<title>Spending Garden — Monthly Spending Tracker</title>
+<style>
+:root{
+  --bg:#f6f3eb;
+  --panel:#fffdf8;
+  --panel-2:#f0ece2;
+  --text:#242720;
+  --muted:#707469;
+  --line:#ded9cd;
+  --accent:#355c4a;
+  --accent-2:#dfe9df;
+  --low:#7ca982;
+  --mid:#d9b96e;
+  --high:#d98a70;
+  --over:#9b7aa0;
+  --shadow:0 10px 30px rgba(61,56,45,.08);
+  --radius:22px;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);color:var(--text);font-family:Inter,ui-rounded,"SF Pro Rounded","SF Pro Display",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{margin:0;min-height:100%;background:
+  radial-gradient(circle at top left,rgba(124,169,130,.12),transparent 35%),
+  radial-gradient(circle at top right,rgba(217,185,110,.11),transparent 30%),
+  var(--bg)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.5}
+.app{width:min(1180px,100%);margin:0 auto;padding:24px 16px 48px}
+.topbar{display:flex;gap:18px;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
+.brand h1{margin:0;font-size:clamp(28px,5vw,48px);letter-spacing:-.04em;line-height:1}
+.brand p{margin:10px 0 0;color:var(--muted);max-width:650px;line-height:1.5}
+.monthbox{min-width:165px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;box-shadow:var(--shadow)}
+.monthbox label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+.monthbox input{width:100%;border:0;background:transparent;color:var(--text);font-weight:700;font-size:16px;outline:none}
+.grid{display:grid;grid-template-columns:1.35fr .65fr;gap:16px}
+.card{background:rgba(255,253,248,.88);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.summary{padding:20px}
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat{padding:14px;border-radius:16px;background:var(--panel-2)}
+.stat .label{font-size:12px;color:var(--muted);margin-bottom:4px}
+.stat strong{font-size:clamp(20px,4vw,30px);letter-spacing:-.03em}
+.note{margin-top:14px;color:var(--muted);font-size:14px;line-height:1.45}
+.insight{padding:20px;display:flex;flex-direction:column;gap:14px}
+.insight h3,.section-head h2,.form-card h3{margin:0;font-size:18px;letter-spacing:-.02em}
+.insight-box{border-radius:18px;padding:16px;background:linear-gradient(145deg,var(--accent-2),#f5f1e7)}
+.insight-box .big{font-weight:800;font-size:24px;letter-spacing:-.03em;margin-bottom:5px}
+.insight-box p{margin:0;color:var(--muted);font-size:14px;line-height:1.45}
+.section{margin-top:18px}
+.section-head{display:flex;justify-content:space-between;gap:12px;align-items:end;margin-bottom:10px}
+.section-head p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{min-height:44px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--text);padding:9px 13px;font-weight:700}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.soft{background:var(--accent-2);border-color:transparent;color:#2d4a3e}
+.btn.danger{color:#8b4b42;background:#fff8f5}
+.forms{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-card{padding:18px}
+.form-card p{color:var(--muted);font-size:13px;line-height:1.45;margin:6px 0 14px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field.full{grid-column:1/-1}
+label{font-size:13px;font-weight:700;display:block}
+input,select,textarea{width:100%;margin-top:6px;border:1px solid var(--line);border-radius:13px;background:#fffefb;color:var(--text);padding:12px 13px;min-height:46px;font-size:16px;outline:none}
+textarea{min-height:88px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:#8ea396;box-shadow:0 0 0 3px rgba(53,92,74,.10)}
+.helper{margin-top:8px;font-size:12px;color:var(--muted)}
+.preview{display:none;margin-top:10px;align-items:center;gap:10px;background:var(--panel-2);padding:10px;border-radius:14px}
+.preview.show{display:flex}
+.preview img{width:58px;height:58px;border-radius:12px;object-fit:cover;border:1px solid var(--line)}
+.preview .meta{min-width:0}.preview .meta div:first-child{font-size:13px;font-weight:800}.preview .meta div:last-child{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:250px}
+.category-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.category-card{display:grid;grid-template-columns:130px 1fr;gap:16px;align-items:stretch;padding:14px;overflow:hidden}
+.vessel-wrap{display:flex;align-items:center;justify-content:center;min-height:180px;background:linear-gradient(180deg,#f5f1e7,#ece8dd);border-radius:18px;position:relative}
+.vessel{position:relative;width:88px;height:145px;border:3px solid #8e9087;border-top-width:2px;border-radius:20px 20px 28px 28px;overflow:hidden;background:rgba(255,255,255,.45);box-shadow:inset 0 0 0 6px rgba(255,255,255,.25)}
+.vessel::before{content:"";position:absolute;top:-8px;left:17px;right:17px;height:12px;border:3px solid #8e9087;border-bottom:0;border-radius:9px 9px 0 0;background:#f5f1e7;z-index:3}
+.fill{position:absolute;left:0;right:0;bottom:0;height:0%;transition:height .45s ease,background .35s ease;background:var(--low)}
+.fill::before{content:"";position:absolute;left:-10%;right:-10%;top:-7px;height:14px;border-radius:50%;background:rgba(255,255,255,.28)}
+.fill-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;font-weight:900;font-size:18px;color:#273028;text-shadow:0 1px rgba(255,255,255,.5)}
+.category-main{min-width:0;display:flex;flex-direction:column}
+.cat-top{display:flex;gap:10px;justify-content:space-between;align-items:flex-start}
+.cat-top h3{margin:0;font-size:19px;line-height:1.2;word-break:break-word}
+.cat-top .tiny-actions{display:flex;gap:6px}
+.iconbtn{width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:#fffdf9;font-size:16px}
+.cat-money{margin-top:8px;font-size:14px;color:var(--muted)}
+.cat-money strong{color:var(--text);font-size:22px;letter-spacing:-.03em}
+.bar{height:12px;background:#e7e2d7;border-radius:999px;overflow:hidden;margin-top:13px}
+.bar > div{height:100%;width:0;border-radius:inherit;transition:width .45s ease,background .35s ease}
+.cat-foot{margin-top:9px;display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.status{font-weight:800;color:var(--text)}
+.cat-note{margin-top:auto;padding-top:12px;font-size:12px;color:var(--muted);line-height:1.4}
+.empty{padding:26px;text-align:center;border:1px dashed var(--line);border-radius:18px;color:var(--muted);background:rgba(255,253,248,.5)}
+.transactions{overflow:hidden}
+.tx-table{width:100%;border-collapse:collapse}
+.tx-table th,.tx-table td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle}
+.tx-table th{color:var(--muted);font-weight:700;background:rgba(240,236,226,.65)}
+.tx-table tr:last-child td{border-bottom:0}
+.money-cell{font-weight:800;white-space:nowrap}
+.thumb{width:42px;height:42px;border-radius:10px;object-fit:cover;border:1px solid var(--line);display:block}
+.muted{color:var(--muted)}
+.pill{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:800;background:var(--panel-2)}
+.footer{margin-top:18px;color:var(--muted);font-size:12px;line-height:1.5;text-align:center}
+.dialog-backdrop{position:fixed;inset:0;background:rgba(27,29,24,.38);display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
+.dialog-backdrop.show{display:flex}
+.dialog{width:min(480px,100%);background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 25px 70px rgba(0,0,0,.18)}
+.dialog h3{margin:0 0 12px}.dialog .actions{justify-content:flex-end;margin-top:14px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;background:#232720;color:#fff;padding:10px 14px;border-radius:999px;font-size:13px;font-weight:700;transition:.2s;z-index:60}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:820px){
+  .grid,.forms{grid-template-columns:1fr}
+  .category-grid{grid-template-columns:1fr}
+  .topbar{flex-direction:column}
+  .monthbox{width:100%;min-width:0}
+}
+@media(max-width:560px){
+  .app{padding:16px 12px 36px}
+  .summary-grid{grid-template-columns:1fr 1fr}.summary-grid .stat:last-child{grid-column:1/-1}
+  .fields{grid-template-columns:1fr}.field.full{grid-column:auto}
+  .category-card{grid-template-columns:100px 1fr;gap:12px;padding:12px}
+  .vessel-wrap{min-height:165px}.vessel{width:72px;height:132px}.fill-label{font-size:15px}
+  .tx-table thead{display:none}.tx-table,.tx-table tbody,.tx-table tr,.tx-table td{display:block;width:100%}.tx-table tr{padding:10px 12px;border-bottom:1px solid var(--line)}.tx-table td{border:0;padding:4px 0}.tx-table td[data-label]::before{content:attr(data-label) ": ";color:var(--muted);font-weight:700}.tx-table td.receipt-cell::before{content:""}
+}
+
+.privacy-strip{margin:0 0 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border:1px solid var(--line);border-radius:16px;background:rgba(223,233,223,.62)}
+.privacy-copy{display:flex;gap:10px;align-items:flex-start;min-width:0}.privacy-dot{width:10px;height:10px;margin-top:5px;border-radius:50%;background:var(--low);flex:0 0 auto}.privacy-copy strong{display:block;font-size:13px}.privacy-copy span{display:block;margin-top:2px;color:var(--muted);font-size:12px;line-height:1.4}
+.install-help{display:none;margin-top:10px;padding:12px 14px;border-radius:14px;background:var(--panel-2);font-size:13px;color:var(--muted);line-height:1.45}.install-help.show{display:block}.install-help strong{color:var(--text)}
+.privacy-details{margin-top:18px;padding:16px 18px}.privacy-details summary{cursor:pointer;font-weight:800}.privacy-details p,.privacy-details li{color:var(--muted);font-size:13px;line-height:1.5}.privacy-details ul{margin:10px 0 0;padding-left:20px}
+@media(max-width:560px){.privacy-strip{align-items:stretch;flex-direction:column}.privacy-strip .btn{width:100%}}
+
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand">
+      <h1>Spending Garden</h1>
+      <p>A gentle monthly tracker that makes spending visible. Each category fills as you spend, so you can notice patterns without turning budgeting into a punishment.</p>
+    </div>
+    <div class="monthbox">
+      <label for="monthPicker">Viewing month</label>
+      <input id="monthPicker" type="month" />
+    </div>
+  </header>
+
+  <div class="privacy-strip" aria-label="Privacy status">
+    <div class="privacy-copy"><span class="privacy-dot" aria-hidden="true"></span><div><strong>Local-only spending data</strong><span>Categories, purchases, notes and receipt images are stored in this browser on this device. No analytics, account, cloud database or data upload is built into this app.</span></div></div>
+    <button class="btn soft" id="installBtn" type="button">Add to Home Screen</button>
+  </div>
+  <div class="install-help" id="installHelp" aria-live="polite"></div>
+
+  <section class="grid">
+    <div class="card summary">
+      <div class="summary-grid">
+        <div class="stat"><div class="label">Monthly caps</div><strong id="sumCaps">$0</strong></div>
+        <div class="stat"><div class="label">Spent so far</div><strong id="sumSpent">$0</strong></div>
+        <div class="stat"><div class="label">Room remaining</div><strong id="sumRemaining">$0</strong></div>
+      </div>
+      <div class="note" id="summaryNote">Add a category to start seeing your month take shape.</div>
+    </div>
+    <aside class="card insight">
+      <h3>What the month is showing</h3>
+      <div class="insight-box">
+        <div class="big" id="insightTitle">No pattern yet</div>
+        <p id="insightText">Once you log a few purchases, this space will quietly point out which category is filling fastest.</p>
+      </div>
+    </aside>
+  </section>
+
+  <section class="section forms">
+    <form class="card form-card" id="categoryForm">
+      <h3>Add a category</h3>
+      <p>Set the amount you want to make visible for this month. You can change it later.</p>
+      <div class="fields">
+        <div class="field"><label for="catName">Category<input id="catName" required maxlength="36" placeholder="Groceries" /></label></div>
+        <div class="field"><label for="catCap">Monthly cap<input id="catCap" required type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="650" /></label></div>
+        <div class="field full"><label for="catNote">Optional note<input id="catNote" maxlength="90" placeholder="Food at home, pantry restocks, household basics…" /></label></div>
+      </div>
+      <div class="actions" style="margin-top:12px"><button class="btn primary" type="submit">Add category</button></div>
+    </form>
+
+    <form class="card form-card" id="spendForm">
+      <h3>Log spending</h3>
+      <p>Add a purchase in a few taps. A receipt photo is optional and is saved locally in this app’s private browser database on this device.</p>
+      <div class="fields">
+        <div class="field"><label for="txCategory">Category<select id="txCategory" required></select></label></div>
+        <div class="field"><label for="txAmount">Amount<input id="txAmount" required type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="42.75" /></label></div>
+        <div class="field full"><label for="txNote">Store or note<input id="txNote" maxlength="90" placeholder="Safeway — weekly groceries" /></label></div>
+        <div class="field full"><label for="receiptInput">Receipt photo<input id="receiptInput" type="file" accept="image/*" capture="environment" /></label><div class="helper">On iPhone/iPad this can open the camera or photo library.</div></div>
+      </div>
+      <div class="preview" id="receiptPreview"><img id="receiptImg" alt="Receipt preview" /><div class="meta"><div>Receipt attached</div><div id="receiptName"></div></div></div>
+      <div class="actions" style="margin-top:12px"><button class="btn primary" id="logBtn" type="submit">Log purchase</button></div>
+    </form>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div><h2>Your spending landscape</h2><p>The fill is informational: low → warming up → near cap → over cap.</p></div>
+      <div class="actions">
+        <button class="btn" id="exportBtn" type="button">Export data</button>
+        <label class="btn" for="importInput" style="display:inline-flex;align-items:center">Import data</label><input id="importInput" type="file" accept="application/json,.json" hidden />
+      </div>
+    </div>
+    <div class="category-grid" id="categoryGrid"></div>
+    <div class="empty" id="categoryEmpty">No categories yet. Add one above and its fill jar will appear here.</div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><div><h2>Recent spending</h2><p>Everything logged for the selected month.</p></div></div>
+    <div class="card transactions" id="txWrap">
+      <table class="tx-table">
+        <thead><tr><th>Date</th><th>Category</th><th>Note</th><th>Amount</th><th>Receipt</th><th></th></tr></thead>
+        <tbody id="txBody"></tbody>
+      </table>
+      <div class="empty" id="txEmpty" style="border:0;border-radius:0">No purchases logged for this month yet.</div>
+    </div>
+  </section>
+
+  <details class="card privacy-details">
+    <summary>Privacy & local storage details</summary>
+    <p>This PWA is intentionally self-contained. It has no analytics scripts, advertising code, sign-in system, remote API calls, or cloud database.</p>
+    <ul>
+      <li>Tracker data is stored in IndexedDB on this device.</li>
+      <li>Receipt photos are compressed locally before being stored in IndexedDB.</li>
+      <li>The service worker only caches the app’s own static files so the app can open offline.</li>
+      <li>Export creates a backup file only when you press Export data. You decide where that file goes.</li>
+      <li>Clearing website/app data or deleting the web app can remove local records, so periodic backups are recommended.</li>
+    </ul>
+  </details>
+
+  <div class="footer">Saved automatically on this device in IndexedDB. The app contains no telemetry or cloud sync. Use Export data when you want your own backup.</div>
+</div>
+
+<div class="dialog-backdrop" id="editDialog">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <h3 id="editTitle">Edit category</h3>
+    <form id="editForm">
+      <label for="editName">Category<input id="editName" required maxlength="36" /></label>
+      <label for="editCap" style="margin-top:10px">Monthly cap<input id="editCap" required type="number" min="0.01" step="0.01" /></label>
+      <label for="editNote" style="margin-top:10px">Note<input id="editNote" maxlength="90" /></label>
+      <div class="actions"><button class="btn" type="button" id="cancelEdit">Cancel</button><button class="btn primary" type="submit">Save</button></div>
+    </form>
+  </div>
+</div>
+<div class="toast" id="toast" aria-live="polite"></div>
+
+<script>
+(async () => {
+  const DB_NAME = 'spending-garden-pwa-v1';
+  const DB_VERSION = 1;
+  const STATE_KEY = 'tracker-state';
+  const LEGACY_KEY = 'spending-garden-v1';
+  const $ = id => document.getElementById(id);
+  const money = n => new Intl.NumberFormat(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}).format(Number(n)||0);
+  const now = new Date();
+  const currentMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  let db;
+  let state = {version:2, months:{}};
+  let selectedReceipt = null;
+  let selectedReceiptPreviewUrl = '';
+  let receiptObjectUrls = [];
+  let editingId = null;
+  let deferredInstallPrompt = null;
+
+  function toast(msg){
+    const t=$('toast');
+    t.textContent=msg;
+    t.classList.add('show');
+    clearTimeout(toast.timer);
+    toast.timer=setTimeout(()=>t.classList.remove('show'),2200);
+  }
+
+  function openDB(){
+    return new Promise((resolve,reject)=>{
+      const req=indexedDB.open(DB_NAME,DB_VERSION);
+      req.onupgradeneeded=()=>{
+        const d=req.result;
+        if(!d.objectStoreNames.contains('meta')) d.createObjectStore('meta',{keyPath:'key'});
+        if(!d.objectStoreNames.contains('receipts')) d.createObjectStore('receipts',{keyPath:'id'});
+      };
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error);
+    });
+  }
+  function storeReq(storeName,mode,action){
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(storeName,mode);
+      const store=tx.objectStore(storeName);
+      let req;
+      try{ req=action(store); }catch(err){ reject(err); return; }
+      if(req){ req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error); }
+      else { tx.oncomplete=()=>resolve(); tx.onerror=()=>reject(tx.error); }
+    });
+  }
+  const idbGet=(store,key)=>storeReq(store,'readonly',s=>s.get(key));
+  const idbPut=(store,val)=>storeReq(store,'readwrite',s=>s.put(val));
+  const idbDelete=(store,key)=>storeReq(store,'readwrite',s=>s.delete(key));
+  const idbGetAll=store=>storeReq(store,'readonly',s=>s.getAll());
+  const idbClear=store=>storeReq(store,'readwrite',s=>s.clear());
+
+  async function loadState(){
+    const record=await idbGet('meta',STATE_KEY);
+    if(record && record.value && record.value.months){ state=record.value; return; }
+    await migrateLegacyIfPresent();
+  }
+  async function saveState(){
+    await idbPut('meta',{key:STATE_KEY,value:state});
+  }
+  async function migrateLegacyIfPresent(){
+    try{
+      const raw=localStorage.getItem(LEGACY_KEY);
+      if(!raw) return;
+      const legacy=JSON.parse(raw);
+      if(!legacy || !legacy.months) return;
+      const migrated={version:2,months:{}};
+      for(const [month,data] of Object.entries(legacy.months)){
+        const categories=Array.isArray(data.categories)?data.categories:[];
+        const txs=[];
+        for(const t of (Array.isArray(data.transactions)?data.transactions:[])){
+          const nt={...t};
+          if(t.receipt && typeof t.receipt==='string' && t.receipt.startsWith('data:image/')){
+            try{
+              const blob=dataUrlToBlob(t.receipt);
+              const rid=id('receipt');
+              await idbPut('receipts',{id:rid,blob,name:'Imported receipt.jpg',type:blob.type||'image/jpeg',createdAt:t.createdAt||new Date().toISOString()});
+              nt.receiptId=rid;
+              nt.receiptName='Imported receipt.jpg';
+            }catch(e){}
+          }
+          delete nt.receipt;
+          txs.push(nt);
+        }
+        migrated.months[month]={categories,transactions:txs};
+      }
+      state=migrated;
+      await saveState();
+    }catch(e){}
+  }
+
+  function monthKey(){ return $('monthPicker').value || currentMonth; }
+  function ensureMonth(){
+    const m=monthKey();
+    if(!state.months[m]) state.months[m]={categories:[],transactions:[]};
+    return state.months[m];
+  }
+  function id(prefix){ return prefix+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8); }
+  function dateToday(){
+    const d=new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function pct(spent,cap){ return cap>0 ? (spent/cap)*100 : 0; }
+  function colorFor(p){ if(p<60)return 'var(--low)'; if(p<85)return 'var(--mid)'; if(p<=100)return 'var(--high)'; return 'var(--over)'; }
+  function languageFor(p){
+    if(p<35) return ['Plenty of room','This category is still lightly used.'];
+    if(p<60) return ['Settling in','You are using this category at a moderate pace.'];
+    if(p<85) return ['Filling up','This category is becoming a larger part of the month.'];
+    if(p<=100) return ['Near the cap','You are close to the amount you set for this category.'];
+    return ['Over the cap','You have moved past the amount you set. That is useful information for next month.'];
+  }
+  function spentFor(catId){ return ensureMonth().transactions.filter(t=>t.categoryId===catId).reduce((a,t)=>a+t.amount,0); }
+
+  async function render(){
+    const data=ensureMonth();
+    await saveState();
+    renderSummary(data);
+    renderCategorySelect(data);
+    renderCategories(data);
+    await renderTransactions(data);
+  }
+  function renderSummary(data){
+    const caps=data.categories.reduce((a,c)=>a+c.cap,0);
+    const spent=data.transactions.reduce((a,t)=>a+t.amount,0);
+    const rem=caps-spent;
+    $('sumCaps').textContent=money(caps);
+    $('sumSpent').textContent=money(spent);
+    $('sumRemaining').textContent=money(Math.max(0,rem));
+    if(!data.categories.length){
+      $('summaryNote').textContent='Add a category to start seeing your month take shape.';
+      $('insightTitle').textContent='No pattern yet';
+      $('insightText').textContent='Once you log a few purchases, this space will quietly point out which category is filling fastest.';
+      return;
+    }
+    const overall=caps>0?spent/caps*100:0;
+    $('summaryNote').textContent=overall<=100 ? `${money(Math.max(0,rem))} remains across the caps you set. This is a snapshot, not a score.` : `You are ${money(Math.abs(rem))} above your combined caps. That can help you decide whether a cap or a habit needs adjusting.`;
+    const ranked=data.categories.map(c=>({c,spent:spentFor(c.id),p:pct(spentFor(c.id),c.cap)})).sort((a,b)=>b.p-a.p);
+    const top=ranked[0];
+    if(top && top.spent>0){ const phrase=languageFor(top.p); $('insightTitle').textContent=`${top.c.name}: ${Math.round(top.p)}%`; $('insightText').textContent=`${phrase[0]}. ${phrase[1]}`; }
+    else { $('insightTitle').textContent='Ready when you are'; $('insightText').textContent='Your caps are set. Log purchases as they happen and the fills will reveal your pacing.'; }
+  }
+  function renderCategorySelect(data){
+    const sel=$('txCategory'), prior=sel.value; sel.innerHTML='';
+    if(!data.categories.length){ const o=document.createElement('option');o.value='';o.textContent='Add a category first';sel.appendChild(o);$('logBtn').disabled=true; }
+    else { data.categories.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;sel.appendChild(o);}); if(data.categories.some(c=>c.id===prior)) sel.value=prior; $('logBtn').disabled=false; }
+  }
+  function renderCategories(data){
+    const grid=$('categoryGrid'); grid.innerHTML='';
+    $('categoryEmpty').style.display=data.categories.length?'none':'block';
+    data.categories.forEach(c=>{
+      const spent=spentFor(c.id), p=pct(spent,c.cap), display=Math.min(100,Math.max(0,p)), col=colorFor(p), words=languageFor(p);
+      const card=document.createElement('article'); card.className='card category-card';
+      const vesselWrap=document.createElement('div'); vesselWrap.className='vessel-wrap';
+      const vessel=document.createElement('div'); vessel.className='vessel';
+      const fill=document.createElement('div'); fill.className='fill'; fill.style.height=display+'%'; fill.style.background=col;
+      const label=document.createElement('div'); label.className='fill-label'; label.textContent=Math.round(p)+'%';
+      vessel.append(fill,label); vesselWrap.append(vessel);
+      const main=document.createElement('div'); main.className='category-main';
+      const top=document.createElement('div'); top.className='cat-top';
+      const title=document.createElement('h3'); title.textContent=c.name;
+      const tiny=document.createElement('div'); tiny.className='tiny-actions';
+      const edit=document.createElement('button'); edit.className='iconbtn'; edit.type='button'; edit.title='Edit category'; edit.textContent='✎'; edit.addEventListener('click',()=>openEdit(c.id));
+      const del=document.createElement('button'); del.className='iconbtn'; del.type='button'; del.title='Delete category'; del.textContent='×'; del.addEventListener('click',()=>deleteCategory(c.id));
+      tiny.append(edit,del); top.append(title,tiny);
+      const m=document.createElement('div'); m.className='cat-money';
+      const strong=document.createElement('strong'); strong.textContent=money(spent); m.append(strong,document.createTextNode(' of '+money(c.cap)));
+      const bar=document.createElement('div'); bar.className='bar'; const bfill=document.createElement('div'); bfill.style.width=display+'%';bfill.style.background=col;bar.append(bfill);
+      const foot=document.createElement('div'); foot.className='cat-foot';
+      const st=document.createElement('span'); st.className='status'; st.textContent=words[0];
+      const left=document.createElement('span'); left.textContent=spent<=c.cap?`${money(c.cap-spent)} left`:`${money(spent-c.cap)} over`;
+      foot.append(st,left);
+      const note=document.createElement('div'); note.className='cat-note'; note.textContent=c.note||words[1];
+      main.append(top,m,bar,foot,note); card.append(vesselWrap,main); grid.append(card);
+    });
+  }
+  async function renderTransactions(data){
+    receiptObjectUrls.forEach(u=>URL.revokeObjectURL(u)); receiptObjectUrls=[];
+    const body=$('txBody'); body.innerHTML='';
+    const rows=[...data.transactions].sort((a,b)=>String(b.date+b.createdAt).localeCompare(String(a.date+a.createdAt)));
+    $('txEmpty').style.display=rows.length?'none':'block';
+    for(const t of rows){
+      const c=data.categories.find(x=>x.id===t.categoryId);
+      const tr=document.createElement('tr');
+      const tdDate=document.createElement('td');tdDate.dataset.label='Date';tdDate.textContent=t.date;
+      const tdCat=document.createElement('td');tdCat.dataset.label='Category';tdCat.textContent=c?c.name:'Deleted category';
+      const tdNote=document.createElement('td');tdNote.dataset.label='Note';tdNote.textContent=t.note||'—';
+      const tdAmt=document.createElement('td');tdAmt.dataset.label='Amount';tdAmt.className='money-cell';tdAmt.textContent=money(t.amount);
+      const tdRec=document.createElement('td');tdRec.className='receipt-cell';
+      if(t.receiptId){
+        try{
+          const rec=await idbGet('receipts',t.receiptId);
+          if(rec && rec.blob){
+            const url=URL.createObjectURL(rec.blob);receiptObjectUrls.push(url);
+            const im=document.createElement('img');im.className='thumb';im.src=url;im.alt=t.receiptName?'Receipt: '+t.receiptName:'Receipt';
+            im.addEventListener('click',()=>window.open(url,'_blank'));tdRec.append(im);
+          }else{ tdRec.textContent='—'; tdRec.classList.add('muted'); }
+        }catch(e){ tdRec.textContent='—'; tdRec.classList.add('muted'); }
+      } else { const s=document.createElement('span');s.className='muted';s.textContent='—';tdRec.append(s); }
+      const tdAct=document.createElement('td');const del=document.createElement('button');del.type='button';del.className='btn danger';del.textContent='Delete';del.addEventListener('click',()=>deleteTransaction(t.id));tdAct.append(del);
+      tr.append(tdDate,tdCat,tdNote,tdAmt,tdRec,tdAct);body.append(tr);
+    }
+  }
+
+  async function compressImage(file){
+    if(!file) return null;
+    if(!file.type.startsWith('image/')) throw new Error('Please choose an image file.');
+    const inputUrl=URL.createObjectURL(file);
+    try{
+      const img=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error('Could not read that image.'));i.src=inputUrl;});
+      const max=1200;let w=img.naturalWidth,h=img.naturalHeight;const scale=Math.min(1,max/Math.max(w,h));w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));
+      const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,w,h);
+      const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Could not compress receipt.')),'image/jpeg',0.76));
+      return blob;
+    } finally { URL.revokeObjectURL(inputUrl); }
+  }
+  function dataUrlToBlob(dataUrl){
+    const [header,b64]=dataUrl.split(',');const type=(header.match(/data:([^;]+)/)||[])[1]||'application/octet-stream';const bin=atob(b64);const arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);return new Blob([arr],{type});
+  }
+  function blobToDataUrl(blob){
+    return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=()=>reject(r.error);r.readAsDataURL(blob);});
+  }
+
+  $('monthPicker').value=currentMonth;
+  $('monthPicker').addEventListener('change',()=>render());
+  $('categoryForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const name=$('catName').value.trim(), cap=Number($('catCap').value), note=$('catNote').value.trim();
+    if(!name || !Number.isFinite(cap) || cap<=0){toast('Enter a category and a cap greater than $0.');return;}
+    ensureMonth().categories.push({id:id('cat'),name:name.slice(0,36),cap:Math.min(cap,1000000),note:note.slice(0,90)});
+    e.target.reset();await render();toast('Category added');
+  });
+  $('receiptInput').addEventListener('change',async()=>{
+    const file=$('receiptInput').files?.[0];selectedReceipt=null;
+    if(selectedReceiptPreviewUrl){URL.revokeObjectURL(selectedReceiptPreviewUrl);selectedReceiptPreviewUrl='';}
+    if(!file){$('receiptPreview').classList.remove('show');return;}
+    try{
+      const blob=await compressImage(file);
+      selectedReceipt={blob,name:file.name.slice(0,120),type:blob.type||'image/jpeg'};
+      selectedReceiptPreviewUrl=URL.createObjectURL(blob);
+      $('receiptImg').src=selectedReceiptPreviewUrl;$('receiptName').textContent=file.name;$('receiptPreview').classList.add('show');
+    }catch(err){toast(err.message||'Could not read that image.');$('receiptInput').value='';}
+  });
+  $('spendForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const categoryId=$('txCategory').value, amount=Number($('txAmount').value), note=$('txNote').value.trim();
+    if(!ensureMonth().categories.some(c=>c.id===categoryId)){toast('Choose a category.');return;}
+    if(!Number.isFinite(amount)||amount<=0){toast('Enter an amount greater than $0.');return;}
+    let receiptId='',receiptName='';
+    if(selectedReceipt){
+      receiptId=id('receipt');receiptName=selectedReceipt.name;
+      await idbPut('receipts',{id:receiptId,blob:selectedReceipt.blob,name:receiptName,type:selectedReceipt.type,createdAt:new Date().toISOString()});
+    }
+    ensureMonth().transactions.push({id:id('tx'),categoryId,amount:Math.min(amount,1000000),note:note.slice(0,90),date:dateToday(),createdAt:new Date().toISOString(),receiptId,receiptName});
+    const keep=categoryId;e.target.reset();selectedReceipt=null;
+    if(selectedReceiptPreviewUrl){URL.revokeObjectURL(selectedReceiptPreviewUrl);selectedReceiptPreviewUrl='';}
+    $('receiptPreview').classList.remove('show');await render();$('txCategory').value=keep;toast('Purchase logged');
+  });
+
+  function openEdit(catId){const c=ensureMonth().categories.find(x=>x.id===catId);if(!c)return;editingId=catId;$('editName').value=c.name;$('editCap').value=c.cap;$('editNote').value=c.note||'';$('editDialog').classList.add('show');$('editName').focus();}
+  function closeEdit(){editingId=null;$('editDialog').classList.remove('show');}
+  $('cancelEdit').addEventListener('click',closeEdit);
+  $('editDialog').addEventListener('click',e=>{if(e.target===$('editDialog'))closeEdit();});
+  $('editForm').addEventListener('submit',async e=>{
+    e.preventDefault();const c=ensureMonth().categories.find(x=>x.id===editingId);if(!c)return;
+    const name=$('editName').value.trim(),cap=Number($('editCap').value),note=$('editNote').value.trim();
+    if(!name||!Number.isFinite(cap)||cap<=0){toast('Enter a valid name and cap.');return;}
+    c.name=name.slice(0,36);c.cap=Math.min(cap,1000000);c.note=note.slice(0,90);closeEdit();await render();toast('Category updated');
+  });
+  async function deleteCategory(catId){
+    const data=ensureMonth(), c=data.categories.find(x=>x.id===catId);if(!c)return;
+    const related=data.transactions.filter(t=>t.categoryId===catId);const count=related.length;
+    const msg=count?`Delete ${c.name} and its ${count} logged purchase${count===1?'':'s'}?`:`Delete ${c.name}?`;if(!confirm(msg))return;
+    for(const t of related){if(t.receiptId)await idbDelete('receipts',t.receiptId);}
+    data.categories=data.categories.filter(x=>x.id!==catId);data.transactions=data.transactions.filter(t=>t.categoryId!==catId);await render();toast('Category deleted');
+  }
+  async function deleteTransaction(txId){
+    if(!confirm('Delete this purchase?'))return;const d=ensureMonth();const t=d.transactions.find(x=>x.id===txId);if(t?.receiptId)await idbDelete('receipts',t.receiptId);d.transactions=d.transactions.filter(t=>t.id!==txId);await render();toast('Purchase deleted');
+  }
+
+  $('exportBtn').addEventListener('click',async()=>{
+    try{
+      const receipts=await idbGetAll('receipts');
+      const packed=[];
+      for(const r of receipts){packed.push({id:r.id,name:r.name||'',type:r.type||r.blob?.type||'image/jpeg',createdAt:r.createdAt||'',dataUrl:await blobToDataUrl(r.blob)});}
+      const backup={format:'spending-garden-backup',version:2,exportedAt:new Date().toISOString(),state,receipts:packed};
+      const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='spending-garden-private-backup.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Private backup exported');
+    }catch(e){toast('Could not create the backup.');}
+  });
+  $('importInput').addEventListener('change',()=>{
+    const file=$('importInput').files?.[0];if(!file)return;const r=new FileReader();
+    r.onload=async()=>{
+      try{
+        const parsed=JSON.parse(String(r.result));
+        let importedState, importedReceipts=[];
+        if(parsed?.format==='spending-garden-backup' && parsed?.state?.months){importedState=parsed.state;importedReceipts=Array.isArray(parsed.receipts)?parsed.receipts:[];}
+        else if(parsed?.months){importedState=parsed;}
+        else throw new Error('invalid');
+        if(!confirm('Import this backup and replace the data currently stored in this tracker?'))return;
+        await idbClear('receipts');state=importedState;state.version=2;
+        for(const rec of importedReceipts){if(rec?.id && typeof rec.dataUrl==='string' && rec.dataUrl.startsWith('data:')){const blob=dataUrlToBlob(rec.dataUrl);await idbPut('receipts',{id:String(rec.id),blob,name:String(rec.name||''),type:String(rec.type||blob.type),createdAt:String(rec.createdAt||'')});}}
+        await saveState();await render();toast('Backup imported');
+      }catch(e){toast('That does not look like a Spending Garden backup.');}
+      finally{$('importInput').value='';}
+    };r.readAsText(file);
+  });
+
+  function showInstallHelp(){
+    const help=$('installHelp');
+    const isiOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    const standalone=window.matchMedia('(display-mode: standalone)').matches || navigator.standalone===true;
+    if(standalone){help.innerHTML='<strong>Already installed.</strong> You are running Spending Garden as a Home Screen app.';}
+    else if(isiOS){help.innerHTML='<strong>On iPhone/iPad:</strong> open this page in Safari, tap the Share button, choose <strong>Add to Home Screen</strong>, turn on <strong>Open as Web App</strong> if shown, then tap Add.';}
+    else{help.innerHTML='<strong>Install:</strong> use your browser menu and choose Install app / Add to Home screen. If your browser offers an install prompt, this button will open it.';}
+    help.classList.add('show');
+  }
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;$('installBtn').textContent='Install app';});
+  $('installBtn').addEventListener('click',async()=>{
+    if(deferredInstallPrompt){deferredInstallPrompt.prompt();try{await deferredInstallPrompt.userChoice;}catch(e){}deferredInstallPrompt=null;}
+    else showInstallHelp();
+  });
+  window.addEventListener('appinstalled',()=>{$('installHelp').classList.remove('show');$('installBtn').textContent='Installed';$('installBtn').disabled=true;});
+
+  try{
+    if('serviceWorker' in navigator){await navigator.serviceWorker.register('./service-worker.js',{scope:'./'});}
+  }catch(e){console.warn('Offline service worker unavailable:',e);}
+
+  try{
+    db=await openDB();await loadState();ensureMonth();await render();
+  }catch(e){
+    console.error(e);
+    document.body.innerHTML='<main style="font-family:system-ui;padding:24px;max-width:680px;margin:auto"><h1>Spending Garden</h1><p>This browser could not open its local app database. Try opening the app from a normal Safari/Chrome tab or reinstalling the Home Screen app.</p></main>';
+  }
+})();
+</script>
+</body>
+</html>
